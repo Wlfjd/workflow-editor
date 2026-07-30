@@ -67,14 +67,6 @@ function App() {
     setPendingAdd({ kind, position })
   }, [])
 
-  const handleAddNodeAt = useCallback(
-    (position: XY, kind: NodeKind = 'process') => {
-      openAddDialog(kind, position)
-    },
-    [openAddDialog],
-  )
-
-  // 툴바로 추가할 때는 현재 보이는 화면의 중앙 근처에 놓는다
   const handleAddNodeFromToolbar = useCallback(
     (kind: NodeKind) => {
       const rect = canvasRef.current?.getBoundingClientRect()
@@ -242,7 +234,6 @@ function App() {
         onDeleteNode={deleteNode}
         onConnect={handleConnect}
         validateConnection={validateConnection}
-        onAddNodeAt={handleAddNodeAt}
       />
       <StatusBar nodeCount={nodes.length} edgeCount={edges.length} zoom={viewport.zoom} />
       {toast && (

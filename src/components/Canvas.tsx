@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Dispatch,
-  MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
   RefObject,
   SetStateAction,
 } from 'react'
-import { GRID_SIZE, MAX_ZOOM, MIN_ZOOM, NODE_HEIGHT, NODE_WIDTH } from '../constants'
+import { GRID_SIZE, MAX_ZOOM, MIN_ZOOM } from '../constants'
 import type {
   ConnectionDraft,
   PortSide,
@@ -37,7 +36,6 @@ interface CanvasProps {
   onDeleteNode: (id: string) => void
   onConnect: (source: string, target: string) => void
   validateConnection: (source: string, target: string) => ValidationResult
-  onAddNodeAt: (position: XY) => void
 }
 
 interface PanState {
@@ -68,7 +66,6 @@ export function Canvas({
   onDeleteNode,
   onConnect,
   validateConnection,
-  onAddNodeAt,
 }: CanvasProps) {
   const [draft, setDraft] = useState<ConnectionDraft | null>(null)
   const [panning, setPanning] = useState(false)
@@ -227,12 +224,6 @@ export function Canvas({
     }
   }
 
-  const handleDoubleClick = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) return
-    const world = screenToWorld(event.clientX, event.clientY)
-    onAddNodeAt({ x: world.x - NODE_WIDTH / 2, y: world.y - NODE_HEIGHT / 2 })
-  }
-
   // 연결 미리보기 경로: 고정된 포트에서 커서까지, 방향(출력→입력)을 유지해 그린다
   let previewD: string | null = null
   if (draft) {
@@ -259,7 +250,6 @@ export function Canvas({
       onPointerMove={handleCanvasPointerMove}
       onPointerUp={handleCanvasPointerUp}
       onPointerCancel={handleCanvasPointerCancel}
-      onDoubleClick={handleDoubleClick}
     >
       <div
         className="canvas-world"
@@ -359,7 +349,7 @@ export function Canvas({
       {nodes.length === 0 && (
         <div className="canvas-empty">
           <p className="canvas-empty-title">캔버스가 비어 있습니다</p>
-          <p>상단의 버튼으로 노드를 추가하거나, 빈 곳을 더블클릭해 보세요.</p>
+          <p>상단 툴바 버튼으로 노드를 추가해 보세요.</p>
         </div>
       )}
     </div>
