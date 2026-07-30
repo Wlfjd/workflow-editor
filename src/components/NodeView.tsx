@@ -153,7 +153,7 @@ export const NodeView = memo(function NodeView({
         )}
         <span className="node-kind-tag">{config.title}</span>
       </div>
-      <div className="node-body">{config.description}</div>
+      <div className="node-body">{node.description}</div>
 
       {selected && (
         <button

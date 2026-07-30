@@ -3,10 +3,10 @@ import type { WorkflowEdge, WorkflowNode } from '../types'
 import { createsCycle, edgePathD, validateConnection } from './graph'
 
 const nodes: WorkflowNode[] = [
-  { id: 'a', kind: 'input', label: 'A', position: { x: 0, y: 0 } },
-  { id: 'b', kind: 'process', label: 'B', position: { x: 200, y: 0 } },
-  { id: 'c', kind: 'process', label: 'C', position: { x: 400, y: 0 } },
-  { id: 'd', kind: 'output', label: 'D', position: { x: 600, y: 0 } },
+  { id: 'a', kind: 'input', label: 'A', description: '입력', position: { x: 0, y: 0 } },
+  { id: 'b', kind: 'process', label: 'B', description: '처리', position: { x: 200, y: 0 } },
+  { id: 'c', kind: 'process', label: 'C', description: '처리', position: { x: 400, y: 0 } },
+  { id: 'd', kind: 'output', label: 'D', description: '출력', position: { x: 600, y: 0 } },
 ]
 
 const edges: WorkflowEdge[] = [

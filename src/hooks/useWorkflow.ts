@@ -10,17 +10,7 @@ import type {
 } from '../types'
 import { createId, validateConnection as validateConnectionGraph } from '../utils/graph'
 
-const DEFAULT_GRAPH: GraphState = {
-  nodes: [
-    { id: 'seed-input', kind: 'input', label: '데이터 입력', position: { x: 80, y: 120 } },
-    { id: 'seed-process', kind: 'process', label: '전처리', position: { x: 420, y: 260 } },
-    { id: 'seed-output', kind: 'output', label: '결과 저장', position: { x: 760, y: 120 } },
-  ],
-  edges: [
-    { id: 'seed-edge-1', source: 'seed-input', target: 'seed-process' },
-    { id: 'seed-edge-2', source: 'seed-process', target: 'seed-output' },
-  ],
-}
+const EMPTY_GRAPH: GraphState = { nodes: [], edges: [] }
 
 interface HistoryState {
   past: GraphState[]
@@ -131,7 +121,7 @@ function reducer(state: HistoryState, action: Action): HistoryState {
     }
 
     case 'RESET':
-      return pushHistory(state, DEFAULT_GRAPH)
+      return pushHistory(state, EMPTY_GRAPH)
   }
 }
 
@@ -147,10 +137,18 @@ function isNode(value: unknown): value is WorkflowNode {
     typeof value.label === 'string' &&
     typeof value.kind === 'string' &&
     value.kind in NODE_KIND_CONFIG &&
+    (typeof value.description === 'string' || value.description === undefined) &&
     isRecord(position) &&
     Number.isFinite(position.x) &&
     Number.isFinite(position.y)
   )
+}
+
+function normalizeNode(raw: WorkflowNode): WorkflowNode {
+  return {
+    ...raw,
+    description: raw.description ?? NODE_KIND_CONFIG[raw.kind].description,
+  }
 }
 
 function isEdge(value: unknown): value is WorkflowEdge {
@@ -162,23 +160,23 @@ function isEdge(value: unknown): value is WorkflowEdge {
   )
 }
 
-/** localStorage에 저장된 그래프를 검증하고, 손상되었으면 기본 예제로 대체한다. */
+/** localStorage에 저장된 그래프를 검증하고, 손상되었으면 빈 캔버스로 대체한다. */
 function loadInitialGraph(): GraphState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT_GRAPH
+    if (!raw) return EMPTY_GRAPH
     const parsed: unknown = JSON.parse(raw)
     if (!isRecord(parsed) || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
-      return DEFAULT_GRAPH
+      return EMPTY_GRAPH
     }
-    const nodes = parsed.nodes.filter(isNode)
+    const nodes = parsed.nodes.filter(isNode).map(normalizeNode)
     const nodeIds = new Set(nodes.map((n) => n.id))
     const edges = parsed.edges
       .filter(isEdge)
       .filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target))
     return { nodes, edges }
   } catch {
-    return DEFAULT_GRAPH
+    return EMPTY_GRAPH
   }
 }
 
@@ -219,17 +217,20 @@ export function useWorkflow() {
     return () => window.removeEventListener('beforeunload', flush)
   }, [])
 
-  const addNode = useCallback((kind: NodeKind, position: XY): string => {
-    const count = presentRef.current.nodes.filter((n) => n.kind === kind).length
-    const node: WorkflowNode = {
-      id: createId('node'),
-      kind,
-      label: `${NODE_KIND_CONFIG[kind].title} ${count + 1}`,
-      position,
-    }
-    dispatch({ type: 'ADD_NODE', node })
-    return node.id
-  }, [])
+  const addNode = useCallback(
+    (kind: NodeKind, position: XY, label: string, description: string): string => {
+      const node: WorkflowNode = {
+        id: createId('node'),
+        kind,
+        label,
+        description,
+        position,
+      }
+      dispatch({ type: 'ADD_NODE', node })
+      return node.id
+    },
+    [],
+  )
 
   const beginMove = useCallback(() => dispatch({ type: 'BEGIN_MOVE' }), [])
   const moveNode = useCallback(

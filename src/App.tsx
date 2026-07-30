@@ -1,13 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas } from './components/Canvas'
+import { NodeAddDialog } from './components/NodeAddDialog'
 import { StatusBar } from './components/StatusBar'
 import { Toolbar } from './components/Toolbar'
-import { MAX_ZOOM, MIN_ZOOM, NODE_HEIGHT, NODE_WIDTH } from './constants'
+import { MAX_ZOOM, MIN_ZOOM, NODE_HEIGHT, NODE_KIND_CONFIG, NODE_WIDTH } from './constants'
 import { useWorkflow } from './hooks/useWorkflow'
 import type { NodeKind, Selection, Viewport, XY } from './types'
 import { clamp } from './utils/graph'
 
 const FIT_PADDING = 80
+
+interface PendingNodeAdd {
+  kind: NodeKind
+  position: XY
+}
+
+function defaultNodeLabel(kind: NodeKind, nodes: { kind: NodeKind }[]): string {
+  const count = nodes.filter((n) => n.kind === kind).length
+  return `${NODE_KIND_CONFIG[kind].title} ${count + 1}`
+}
 
 function App() {
   const {
@@ -30,6 +41,7 @@ function App() {
   } = useWorkflow()
 
   const [selection, setSelection] = useState<Selection>(null)
+  const [pendingAdd, setPendingAdd] = useState<PendingNodeAdd | null>(null)
   const [viewport, setViewport] = useState<Viewport>({ pan: { x: 0, y: 0 }, zoom: 1 })
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null)
   const canvasRef = useRef<HTMLDivElement | null>(null)
@@ -51,12 +63,15 @@ function App() {
     return exists ? selection : null
   }, [selection, nodes, edges])
 
+  const openAddDialog = useCallback((kind: NodeKind, position: XY) => {
+    setPendingAdd({ kind, position })
+  }, [])
+
   const handleAddNodeAt = useCallback(
     (position: XY, kind: NodeKind = 'process') => {
-      const id = addNode(kind, position)
-      setSelection({ type: 'node', id })
+      openAddDialog(kind, position)
     },
-    [addNode],
+    [openAddDialog],
   )
 
   // 툴바로 추가할 때는 현재 보이는 화면의 중앙 근처에 놓는다
@@ -66,15 +81,22 @@ function App() {
       const cx = rect ? rect.width / 2 : 400
       const cy = rect ? rect.height / 2 : 300
       const jitter = () => (Math.random() - 0.5) * 60
-      handleAddNodeAt(
-        {
-          x: (cx - viewport.pan.x) / viewport.zoom - NODE_WIDTH / 2 + jitter(),
-          y: (cy - viewport.pan.y) / viewport.zoom - NODE_HEIGHT / 2 + jitter(),
-        },
-        kind,
-      )
+      openAddDialog(kind, {
+        x: (cx - viewport.pan.x) / viewport.zoom - NODE_WIDTH / 2 + jitter(),
+        y: (cy - viewport.pan.y) / viewport.zoom - NODE_HEIGHT / 2 + jitter(),
+      })
     },
-    [handleAddNodeAt, viewport],
+    [openAddDialog, viewport],
+  )
+
+  const handleConfirmAddNode = useCallback(
+    (draft: { kind: NodeKind; label: string; description: string }) => {
+      if (!pendingAdd) return
+      const id = addNode(pendingAdd.kind, pendingAdd.position, draft.label, draft.description)
+      setPendingAdd(null)
+      setSelection({ type: 'node', id })
+    },
+    [addNode, pendingAdd],
   )
 
   const handleConnect = useCallback(
@@ -174,15 +196,16 @@ function App() {
         event.preventDefault()
         deleteSelection()
       } else if (event.key === 'Escape') {
-        setSelection(null)
+        if (pendingAdd) setPendingAdd(null)
+        else setSelection(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [undo, redo, deleteSelection])
+  }, [undo, redo, deleteSelection, pendingAdd])
 
   const handleReset = useCallback(() => {
-    if (window.confirm('그래프를 기본 예제로 초기화할까요? (⌘Z로 되돌릴 수 있습니다)')) {
+    if (window.confirm('캔버스의 모든 노드와 엣지를 삭제할까요? (⌘Z로 되돌릴 수 있습니다)')) {
       reset()
       setSelection(null)
     }
@@ -226,6 +249,15 @@ function App() {
         <div key={toast.id} className="toast" role="status">
           {toast.text}
         </div>
+      )}
+      {pendingAdd && (
+        <NodeAddDialog
+          kind={pendingAdd.kind}
+          defaultLabel={defaultNodeLabel(pendingAdd.kind, nodes)}
+          defaultDescription={NODE_KIND_CONFIG[pendingAdd.kind].description}
+          onConfirm={handleConfirmAddNode}
+          onCancel={() => setPendingAdd(null)}
+        />
       )}
     </div>
   )

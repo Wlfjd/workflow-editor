@@ -12,6 +12,7 @@ export interface WorkflowNode {
   id: string
   kind: NodeKind
   label: string
+  description: string
   position: XY
 }
 

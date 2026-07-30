@@ -164,7 +164,7 @@ interface HistoryState {
 - present가 바뀔 때마다 300ms 디바운스로 `localStorage`에 저장 — 드래그 중 매 프레임 쓰기를 방지합니다.
 - `beforeunload`에서 즉시 flush해 마지막 변경 유실을 막습니다.
 - 로드 시 타입 가드(`isNode`/`isEdge`)로 스키마를 검증하고, 존재하지 않는 노드를 가리키는
-  엣지(dangling edge)를 걸러냅니다. JSON 파싱 실패 등 손상 시 기본 예제 그래프로 대체합니다.
+  엣지(dangling edge)를 걸러냅니다. JSON 파싱 실패 등 손상 시 빈 캔버스로 대체합니다.
 
 ## 8. 성능 고려
 

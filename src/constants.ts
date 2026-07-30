@@ -6,7 +6,7 @@ export const GRID_SIZE = 24
 export const MIN_ZOOM = 0.25
 export const MAX_ZOOM = 2.5
 export const HISTORY_LIMIT = 50
-export const STORAGE_KEY = 'workflow-editor:graph:v1'
+export const STORAGE_KEY = 'workflow-editor:graph:v2'
 
 export interface NodeKindConfig {
   title: string

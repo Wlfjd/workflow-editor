@@ -96,10 +96,10 @@ export function Toolbar({
         <button
           type="button"
           className="btn"
-          title="기본 예제 그래프로 초기화"
+          title="캔버스 비우기"
           onClick={onReset}
         >
-          초기화
+          비우기
         </button>
       </div>
     </header>
